@@ -1,3 +1,5 @@
+import 'package:exam/API/api.dart';
+import 'package:exam/model/place.dart';
 import 'package:flutter/material.dart';
 
 void main() => runApp(MyApp());
@@ -13,29 +15,6 @@ class MyApp extends StatelessWidget {
 }
 
 class HomePage extends StatelessWidget {
-  final List<Map<String, dynamic>> destinations = [
-    {
-      'name': 'Hoi An',
-      'image': 'assets/img/R.jpg',
-      'rating': 4.0,
-    },
-    {
-      'name': 'Sai Gon',
-      'image': 'assets/img/S.jpg',
-      'rating': 4.5,
-    },
-    {
-      'name': 'Sai Gon',
-      'image': 'assets/img/S.jpg',
-      'rating': 4.5,
-    },
-    {
-      'name': 'Hoi An',
-      'image': 'assets/img/R.jpg',
-      'rating': 4.0,
-    },
-  ];
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -139,14 +118,26 @@ class HomePage extends StatelessWidget {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               SizedBox(height: 10),
               Expanded(
-                child: GridView.count(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 10,
-                  childAspectRatio: 0.75,
-                  children: destinations
-                      .map((dest) => _buildDestinationCard(dest))
-                      .toList(),
+                child: FutureBuilder<List<Place>>(
+                  future: fetchPlaces(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return Center(child: CircularProgressIndicator());
+                    } else if (snapshot.hasError) {
+                      return Center(child: Text('Error: ${snapshot.error}'));
+                    } else {
+                      final destinations = snapshot.data!;
+                      return GridView.count(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 10,
+                        mainAxisSpacing: 10,
+                        childAspectRatio: 0.75,
+                        children: destinations
+                            .map((place) => _buildDestinationCard(place))
+                            .toList(),
+                      );
+                    }
+                  },
                 ),
               ),
             ],
@@ -172,13 +163,15 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildDestinationCard(Map<String, dynamic> dest) {
+  Widget _buildDestinationCard(Place place) {
     return Stack(
       children: [
         Container(
           decoration: BoxDecoration(
             image: DecorationImage(
-                image: AssetImage(dest['image']), fit: BoxFit.cover),
+              image: NetworkImage(place.image),
+              fit: BoxFit.cover,
+            ),
             borderRadius: BorderRadius.circular(16),
           ),
         ),
@@ -188,13 +181,13 @@ class HomePage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(dest['name'],
+              Text(place.name,
                   style: TextStyle(
                       color: Colors.white, fontWeight: FontWeight.bold)),
               Row(
                 children: [
                   Icon(Icons.star, color: Colors.yellow, size: 16),
-                  Text('${dest['rating']}',
+                  Text('${place.rating}',
                       style: TextStyle(color: Colors.white)),
                 ],
               ),
